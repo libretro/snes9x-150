@@ -946,9 +946,6 @@ char *S9xParseDisplayConfig(ConfigFile &conf, int pass){
         keymaps.push_back(strpair_t("K00:A+Printscreen", "DumpSPC7110Log"));
         keymaps.push_back(strpair_t("K00:A+Break", "DumpSPC7110Log"));
         keymaps.push_back(strpair_t("K00:A+Break_alternative", "DumpSPC7110Log"));
-        keymaps.push_back(strpair_t("K00:S+1", "BeginRecordingMovie"));
-        keymaps.push_back(strpair_t("K00:S+2", "EndRecordingMovie"));
-        keymaps.push_back(strpair_t("K00:S+3", "LoadMovie"));
 
         keymaps.push_back(strpair_t("K00:A+F1", "SaveSPC"));
         keymaps.push_back(strpair_t("K00:C+F1", "SaveSPC"));

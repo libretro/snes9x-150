@@ -2601,9 +2601,6 @@ char *S9xParseDisplayConfig(ConfigFile &conf, int pass){
         keymaps.push_back(strpair_t("K00:Pause", "Pause"));
 
         keymaps.push_back(strpair_t("K00:A+Pause", "DumpSPC7110Log"));
-        keymaps.push_back(strpair_t("K00:S+1", "BeginRecordingMovie"));
-        keymaps.push_back(strpair_t("K00:S+2", "EndRecordingMovie"));
-        keymaps.push_back(strpair_t("K00:S+3", "LoadMovie"));
 
         keymaps.push_back(strpair_t("K00:A+F1", "SaveSPC"));
         keymaps.push_back(strpair_t("K00:C+F1", "SaveSPC"));
