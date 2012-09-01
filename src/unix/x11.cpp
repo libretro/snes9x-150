@@ -160,7 +160,6 @@
 #include "soundux.h"
 #include "x11.h"
 #include "controls.h"
-#include "movie.h"
 
 #if 0
 #define QT_CLEAN_NAMESPACE

@@ -80,7 +80,6 @@ endif
 ifndef DREAMCAST
 SNAPOBJ = snaporig.o snapshot.o
 SCREENSHOTOBJ = screenshot.o
-MOVIEOBJ = movie.o
 endif
 
 ifdef SDD1_DECOMP
@@ -105,7 +104,7 @@ OBJECTS=$(CPUOBJ) $(SOUNDOBJ) apudebug.o $(FXOBJ) $(C4OBJ) \
 	memmap.o clip.o dsp1.o ppu.o dma.o snes9x.o data.o globals.o reader.o \
 	conffile.o bsx.o \
 	$(SPC7110OBJ) $(OBC1OBJ) $(SETAOBJ) $(SDD1OBJ) \
-	$(CHEATOBJ) $(PLATFORMOBJ) $(SNAPOBJ) $(SCREENSHOTOBJ) $(MOVIEOBJ)
+	$(CHEATOBJ) $(PLATFORMOBJ) $(SNAPOBJ) $(SCREENSHOTOBJ)
 
 ifdef THREAD_SOUND
 CPUDEFINES += -DUSE_THREADS
