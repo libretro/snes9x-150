@@ -1,0 +1,362 @@
+#ZSNESFX=1
+#ZSNESC4=1
+
+
+#GLIDE=1
+#OPENGL=1
+#AIDO=1
+#GUI=0
+THREAD_SOUND=1
+SDD1_DECOMP=1
+CORRECT_VRAM_READS=1
+#DREAMCAST=1
+CHEATS=1
+2XSAI=1
+
+#Fairly good and special-char-safe descriptor of the os being built on.
+OS=`uname -s -r -m|sed \"s/ /-/g\"|tr \"[A-Z]\" \"[a-z]\"|tr \"/()\" \"___\"`
+BUILDDIR=.
+#BUILDDIR=build/$(OS)
+
+ifdef DREAMCAST
+CPU=sh
+ASMCPU=1
+CHEATS=0
+2XSAI=0
+else
+CPU=i386
+endif
+
+ifdef ZSNESFX
+FXOBJ=$(CPU)/fxemu2b.o $(CPU)/fxemu2.o $(CPU)/fxemu2c.o $(CPU)/fxtable.o $(CPU)/sfxproc.o $(CPU)/ZSNES.O
+FXDEFINES=-DZSNES_FX -DEXECUTE_SUPERFX_PER_LINE
+FXDEPENDS=zsnes_fx
+FXNO_DEPENDS=c_fx
+else
+FXOBJ=fxinst.o fxemu.o fxdbg.o
+FXDEFINES=
+FXDEPENDS=c_fx
+FXNO_DEPENDS=zsnes_fx
+endif
+
+ifdef ZSNESC4
+C4OBJ=$(CPU)/C4.O $(CPU)/zsnesc4.o c4.o
+C4DEFINES=-DZSNES_C4
+C4DEPENDS=zsnes_c4
+C4NO_DEPENDS=c_c4
+else
+C4OBJ=c4.o c4emu.o
+C4DEFINES=
+C4DEPENDS=c_c4
+C4NO_DEPENDS=zsnes_c4
+endif
+
+ifdef SPC700ASM
+SOUNDOBJ=spctool/spc700.o spctool/dsp.o spctool.o spctool/soundmod.o 
+SOUNDDEFINES=-DSPCTOOL
+else
+SOUNDOBJ=spc700.o soundux.o apu.o 
+SOUNDDEFINES=-DSPC700_C
+endif
+
+ifdef ASMCPU
+CPUOBJ=$(CPU)/cpuops.o $(CPU)/cpuexec.o $(CPU)/sa1ops.o
+else
+CPUOBJ=cpuops.o cpuexec.o sa1cpu.o
+endif
+
+ifdef DREAMCAST
+PLATFORMOBJ=dc/input.o dc/display.o dc/sound.o \
+dc/dc.o dc/menu.o dc/trace.o dc/lcd.o \
+dc/lain_blanker.o dc/td.o dc/md5.o
+else
+PLATFORMOBJ=unix/unix.o
+endif
+
+ifdef CHEATS
+CHEATOBJ=cheats.o cheats2.o
+endif
+
+ifndef DREAMCAST
+SNAPOBJ = snaporig.o snapshot.o
+SCREENSHOTOBJ = screenshot.o
+MOVIEOBJ = movie.o
+endif
+
+ifdef SDD1_DECOMP
+SDD1OBJ=sdd1emu.o
+ifdef SDD1_VERIFY
+SDD1DEFINES=-DSDD1_DECOMP -DSDD1_VERIFY
+else
+SDD1DEFINES=-DSDD1_DECOMP
+endif
+endif
+
+ifdef CORRECT_VRAM_READS
+CORRVRAMDEFINES=-DCORRECT_VRAM_READS
+endif
+
+SPC7110OBJ=spc7110.o
+OBC1OBJ=obc1.o
+SETAOBJ=seta.o seta010.o seta011.o seta018.o
+
+OBJECTS=$(CPUOBJ) $(SOUNDOBJ) apudebug.o $(FXOBJ) $(C4OBJ) \
+	controls.o crosshairs.o cpu.o sa1.o debug.o sdd1.o tile.o srtc.o gfx.o \
+	memmap.o clip.o dsp1.o ppu.o dma.o snes9x.o data.o globals.o reader.o \
+	conffile.o bsx.o \
+	$(SPC7110OBJ) $(OBC1OBJ) $(SETAOBJ) $(SDD1OBJ) \
+	$(CHEATOBJ) $(PLATFORMOBJ) $(SNAPOBJ) $(SCREENSHOTOBJ) $(MOVIEOBJ)
+
+ifdef THREAD_SOUND
+CPUDEFINES += -DUSE_THREADS
+EXTRALIBS += -lpthread
+endif
+
+ifdef GLIDE
+GLIDEOBJS = unix/glide.o
+GLIDEDEFINES = -DUSE_GLIDE -I/usr/include/glide
+GLIDELIBS = -lglide2x
+endif
+
+ifdef OPENGL
+OPENGLOBJS = unix/opengl.o
+OPENGLDEFINES = -DUSE_OPENGL
+OPENGLLIBS = -lGL -lGLU -ldl
+endif
+
+ifdef AIDO
+AIDOOBJS = unix/aido.o
+AIDODEFINES = -DUSE_AIDO
+endif
+
+JOYDEFINES =  -DJOYSTICK_SUPPORT
+
+ifdef DREAMCAST
+CCC = sh-elf-c++ -fno-rtti
+CC = sh-elf-gcc
+NASM = fail
+GASM = fail
+else
+CCC = g++  -fno-rtti
+CC = gcc
+NASM = not_found
+GASM = g++
+endif
+
+ifdef DREAMCAST
+INCLUDES = -Idc
+DEFS = -DDC
+else
+INCLUDES = 
+DEFS = -DMITSHM
+endif
+
+INCLUDES += -I. -Iunzip 
+
+ifdef DREAMCAST
+OPTIMISE=-O4 -ffreestanding -ffast-math -fschedule-insns2 -fomit-frame-pointer -fno-inline-functions -fno-defer-pop -fforce-addr -fstrict-aliasing -funroll-loops -fdelete-null-pointer-checks -fno-exceptions
+CPUFLAGS=-ml  -m4-single-only
+else
+OPTIMISE =  -O2 -fomit-frame-pointer -fno-exceptions -Wall -W -pedantic -Wno-unused-parameter -pipe
+endif
+
+DEFS += \
+-DCPU_SHUTDOWN \
+-DSPC700_SHUTDOWN \
+$(FXDEFINES) \
+$(C4DEFINES) \
+$(CPUDEFINES) \
+$(SOUNDDEFINES) \
+$(GLIDEDEFINES) \
+$(OPENGLDEFINES) \
+$(AIDODEFINES) \
+$(SDD1DEFINES) \
+$(CORRVRAMDEFINES) \
+$(JOYDEFINES) \
+-DNO_INLINE_SET_GET  -DNOASM -DNEW_COLOUR_BLENDING -DZLIB -DHAVE_LIBPNG -DHAVE_MKSTEMP -DUSE_DGA_EXTENSION -DUSE_VIDMODE_EXTENSION -DHAVE_STRINGS_H -DHAVE_SYS_IOCTL_H -DHAVE_STDINT_H -DPTR_NOT_INT -DRIGHTSHIFT_int8_IS_SAR -DRIGHTSHIFT_int16_IS_SAR -DRIGHTSHIFT_int32_IS_SAR -DRIGHTSHIFT_int64_IS_SAR -DRIGHTSHIFT_IS_SAR '-DACCEPT_SIZE_T=socklen_t'
+
+CCFLAGS = $(OPTIMISE) $(CPUFLAGS) $(INCLUDES) $(DEFS)
+
+CFLAGS=$(CCFLAGS)
+
+.SUFFIXES: .o .cpp .c .cc .h .m .i .S .asm .obj .O .CPP .C .ASM
+#FIXME: Why is this set statically?
+#LDLIBS = -L/usr/X11R6/lib
+
+ifdef GLIDE
+all: Makefile gsnes9x
+else
+ifdef OPENGL
+all: Makefile osnes9x
+else
+all: Makefile snes9x
+endif
+endif
+
+Makefile: Makefile.in
+	@echo "Makefile is older than configure or in-file. Run configure or touch Makefile."
+	exit 1
+
+#ggisnes9x
+#xf86snes9x
+
+ifdef ASMCPU
+OFFSET=offsets
+else
+OFFSET=
+endif
+
+offsets: offsets.o
+	$(CCC) $(INCLUDES) -o $@ offsets.o
+	./offsets >$(CPU)/offsets.h
+
+snes9x: $(OBJECTS) unix/x11.o $(AIDOOBJS) $(OFFSET)
+	$(CCC) $(INCLUDES) -o $@ $(OBJECTS) $(AIDOOBJS) $(GLIDEOBJS) $(OPENGLOBJS) unix/x11.o $(LDLIBS) $(GLIDELIBS) $(OPENGLLIBS)  -lz -lpng -L/usr/lib -lX11 -lXext -lXxf86dga -lXxf86vm -lnsl  -lX11 -lXext -lXext -lX11 $(EXTRALIBS) -lm
+
+unix/svga_keynames.h: unix/svga_get_keynames.pl
+	unix/svga_get_keynames.pl /usr/include/vgakeyboard.h > unix/svga_keynames.h
+
+unix/svga.o: unix/svga_keynames.h
+
+ssnes9x: $(OBJECTS) unix/svga.o 
+	$(CCC) $(INCLUDES) -o $@ $(OBJECTS) $(GLIDEOBJS) unix/svga.o $(LDLIBS) $(GLIDELIBS)  -lz -lpng -L/usr/lib -lX11 -lXext -lXxf86dga -lXxf86vm -lnsl  -lX11 -lXext -lvga -lvgagl $(EXTRALIBS) -lm
+
+gsnes9x: $(OBJECTS) $(GLIDEOBJS)
+	$(CCC) $(INCLUDES) -o $@ $(OBJECTS) $(GLIDEOBJS) $(LDLIBS) -lglide $(EXTRALIBS) -lm
+
+ggisnes9x: $(OBJECTS) unix/ggi.o
+	$(CCC) $(INCLUDES) -o $@ $(OBJECTS) unix/ggi.o $(LDLIBS) -lggi $(EXTRALIBS) -lm
+
+osnes9x: $(OBJECTS) unix/x11.o $(OPENGLOBJS)
+	$(CCC) $(INCLUDES) -o $@ $(OBJECTS) unix/x11.o $(OPENGLOBJS) $(LDLIBS) $(OPENGLLIBS)  -lz -lpng -L/usr/lib -lX11 -lXext -lXxf86dga -lXxf86vm -lnsl  -lX11 -lXext -lXext -lX11 $(EXTRALIBS) -lm
+
+s9xserver: $(SERVER_OBJECTS)
+	$(CCC) $(INCLUDES) -o $@ $(SERVER_OBJECTS)
+
+jma/s9x-jma.o: jma/s9x-jma.cpp
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) -fexceptions $*.cpp -o $@
+jma/7zlzma.o: jma/7zlzma.cpp
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) -fexceptions $*.cpp -o $@
+jma/crc32.o: jma/crc32.cpp
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) -fexceptions $*.cpp -o $@
+jma/iiostrm.o: jma/iiostrm.cpp
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) -fexceptions $*.cpp -o $@
+jma/inbyte.o: jma/inbyte.cpp
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) -fexceptions $*.cpp -o $@
+jma/jma.o: jma/jma.cpp
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) -fexceptions $*.cpp -o $@
+jma/lzma.o: jma/lzma.cpp
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) -fexceptions $*.cpp -o $@
+jma/lzmadec.o: jma/lzmadec.cpp
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) -fexceptions $*.cpp -o $@
+jma/winout.o: jma/winout.cpp
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) -fexceptions $*.cpp -o $@
+
+.cpp.o:
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) $*.cpp -o $@
+
+.c.o:
+	$(CC) $(INCLUDES) -c $(CCFLAGS) $*.c -o $@
+
+.cpp.S:
+	$(GASM) $(INCLUDES) -S $(CCFLAGS) $*.cpp -o $@
+
+.cpp.i:
+	$(GASM) $(INCLUDES) -E $(CCFLAGS) $*.cpp -o $@
+
+.S.o:
+	$(GASM) $(INCLUDES) -c $(CCFLAGS) $*.S -o $@
+
+.S.i:
+	$(GASM) $(INCLUDES) -c -E $(CCFLAGS) $*.S -o $@
+
+.s.o:
+	@echo Compiling $*.s
+	sh-elf-as -little $*.s -o $@
+
+.asm.o:
+	$(NASM) -f elf $(FXDEFINES) -i. -ii386 -o $@ $*.asm
+
+.obj.o:
+	cp $*.obj $*.o
+
+.CPP.O:
+	$(CCC) $(INCLUDES) -c $(CCFLAGS) -x c++ $*.CPP -o $@
+
+.C.O:
+	$(CC) $(INCLUDES) -c $(CCFLAGS) $*.C -o $@
+
+.ASM.O:
+	$(NASM) -f elf $(FXDEFINES) -i . -i i386 $*.ASM -o $@
+
+unix/moc_snes9x_gui.cpp: unix/snes9x_gui.h
+	$(MOC) unix/snes9x_gui.h -o $@
+
+clean:
+	rm -f $(OBJECTS) offsets.o unix/svga.o unix/aido.o unix/x11.o unix/ggi.o unix/xf86.o unix/glide.o
+
+#release: CCFLAGS += -DNO_DEBUGGER
+
+_bin-package:
+	RELNR=`grep "#define VERSION" snes9x.h | sed -e 's/"//g' | awk '{ print $$3 }'` && \
+	echo $$RELNR && \
+	RELNAME=snes9x-$${RELNR} && export RELNAME && \
+	test \! -f $${RELNAME}.tar.gz && \
+	DISTDIR=disttmp/$${RELNAME}/ && \
+	rm -rf disttmp && \
+	mkdir disttmp && \
+	mkdir $${DISTDIR} && \
+	cp snes9x $${DISTDIR} && \
+	cp config.info hardware.txt problems.txt changes.txt ../faqs.txt ../readme.txt ../readme.unix $${DISTDIR} && \
+	(cd disttmp && tar cvf - $${RELNAME}) | gzip -c > $${RELNAME}.tar.gz &&\
+	rm -rf disttmp
+
+#FIXME: Should possibly have clean, but not in xenofarm build
+bin-release: snes9x _bin-package
+
+#FIXME: Intelligent messages when bailing out.
+#FIXME: See those ls:s? Don't look to closely at the statements...
+_src-package:
+	RELNR=`grep "#define VERSION" snes9x.h | sed -e 's/"//g' | awk '{ print $$3 }'` && \
+	echo $$RELNR && \
+	RELNAME=snes9x-$${RELNR}-src && \
+	test \! -f $${RELNAME}.tar.gz && \
+	test \! `ls *~` && \
+	test \! `ls *.o` && \
+	test \! -f snes9x && \
+	export RELNR && export RELNAME && \
+	(cd .. && PWD=`pwd` && SNESDIR=`basename $$PWD` && cd .. && \
+	 DISTDIR=disttmp/$${RELNAME} && \
+	 rm -rf disttmp && \
+	 mkdir disttmp && \
+	 cp -r $${SNESDIR} $${DISTDIR} && \
+	 rm -f $${DISTDIR}/snes9x/config.* 2>/dev/null && \
+	 rm -f $${DISTDIR}/snes9x/conftezt.out.* 2>/dev/null && \
+	 rm -rf $${DISTDIR}/snes9x/autom4te.cache 2>/dev/null && \
+	 rm $${DISTDIR}/snes9x/Makefile && \
+	 find disttmp -name CVS -type f -exec rm "{}" \; && \
+	 find disttmp -name CVS -type d -exec rm "{}" \; && \
+	 (cd disttmp && tar cvf - $${RELNAME}) | gzip -c > $${RELNAME}.tar.gz  && \
+	mv $${RELNAME}.tar.gz $${SNESDIR}/snes9x/ ) && \
+	rm -rf disttmp
+
+#Requires:
+# 1. Prestine checkout
+# 2. `autoconf`
+# 3. `./configure`
+src-release: depend _src-package
+
+xenofarm:
+	./xenofarm.sh
+	cd build/xenofarm && tar cf - . > ../../../xenofarm_result.tar
+	gzip -f9 ../xenofarm_result.tar
+
+# And now for the impressive testsuite:
+verify: snes9x
+	./snes9x --selftest
+
+#FIXME: Make a auto-self-reference.
+depend:
+	$(CC) $(CFLAGS) -MM -MG \
+	  `find . '(' -name '*.c' -o -name '*.cpp' -o -name '*.S' ')' -print -o -name msdos -prune` \
+	  | sed -e 's@^[^ :]*: *\([^ ]*/\)[^ /]*@\1&@'
