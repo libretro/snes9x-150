@@ -252,6 +252,7 @@ void retro_init()
    Settings.Transparency = TRUE;
    Settings.StretchScreenshots = 0;
    Settings.AutoSaveDelay = 1;
+   Settings.CyclesPercentage = 100;
 
    CPU.Flags = 0;
 
