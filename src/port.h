@@ -159,7 +159,7 @@
 
 #include <sys/types.h>
 
-/* #define PIXEL_FORMAT RGB565 */
+#define PIXEL_FORMAT RGB565
 #define GFX_MULTI_FORMAT
 
 #ifndef NOASM
